@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GDC — Gestion Des Congés</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================
+       1. VARIABLES ET STYLES DE BASE
+       ========================================== */
+    :root {
+      --bg-main: #0f1117;
+      --bg-card: #1a1d27;
+      --bg-card-hover: #222634;
+      --bg-input: #12141d;
+      --border-color: #2a2e3d;
+      --accent-blue: #4f8ef7;
+      --accent-blue-hover: #3b76d9;
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.12);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --info-bg: rgba(79, 142, 247, 0.12);
+      --text-primary: #e2e8f0;
+      --text-secondary: #8b9bb4;
+      --text-muted: #53627c;
+      --sidebar-width: 240px;
+      --header-height: 64px;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-x: hidden;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Scrollbar personnalisé */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-main);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* ==========================================
+       2. LAYOUT & STRUCTURE
+       ========================================== */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-card);
+      border-right: 1px solid var(--border-color);
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    .sidebar-brand {
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-brand-logo {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .sidebar-brand-text {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    .sidebar-brand-text span {
+      color: var(--accent-blue);
+    }
+
+    .sidebar-menu {
+      padding: 20px 12px;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin: 16px 12px 6px;
+      font-weight: 600;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .nav-item:hover {
+      background-color: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background-color: var(--info-bg);
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .wrapper {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .header {
+      height: var(--header-height);
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 90;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-left: 12px;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .main-content {
+      padding: 28px;
+      flex: 1;
+    }
+
+    .view-section {
+      display: none;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================
+       3. COMPOSANTS UI
+       ========================================== */
+    /* Cards */
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: var(--transition);
+    }
+
+    .kpi-card:hover {
+      border-color: var(--accent-blue);
+      transform: translateY(-2px);
+    }
+
+    .kpi-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .kpi-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
+    }
+
+    .kpi-data {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-EN_ATTENTE { background-color: var(--warning-bg); color: var(--warning); }
+    .badge-APPROUVEE { background-color: var(--success-bg); color: var(--success); }
+    .badge-REJETEE { background-color: var(--danger-bg); color: var(--danger); }
+    .badge-ANNULEE { background-color: rgba(139, 155, 180, 0.15); color: var(--text-secondary); }
+
+    /* Boutons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .btn-primary { background-color: var(--accent-blue); color: #fff; }
+    .btn-primary:hover { background-color: var(--accent-blue-hover); }
+
+    .btn-success { background-color: var(--success); color: #fff; }
+    .btn-success:hover { filter: brightness(0.9); }
+
+    .btn-danger { background-color: var(--danger); color: #fff; }
+    .btn-danger:hover { filter: brightness(0.9); }
+
+    .btn-outline {
+      background-color: transparent;
+      border-color: var(--border-color);
+      color: var(--text-primary);
+    }
+    .btn-outline:hover {
+      background-color: var(--bg-card-hover);
+      border-color: var(--text-muted);
+    }
+
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-icon-only { padding: 6px; border-radius: var(--radius-sm); }
+
+    /* Avatars */
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 12px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    /* Dynamic progress bar */
+    .progress-bar-bg {
+      height: 6px;
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    /* Tableaux */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .table th {
+      padding: 12px 16px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: rgba(0,0,0,0.1);
+    }
+
+    .table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+
+    .table tbody tr {
+      transition: var(--transition);
+    }
+
+    .table tbody tr:hover {
+      background-color: var(--bg-card-hover);
+    }
+
+    /* Formulaires */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-control, .form-select {
+      width: 100%;
+      padding: 9px 12px;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 13px;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px var(--info-bg);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    .form-row > * { flex: 1; }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+      transform: scale(0.95);
+      transition: var(--transition);
+    }
+
+    .modal-backdrop.active .modal {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background-color: rgba(0,0,0,0.1);
+    }
+
+    /* Drawer Side Panel */
+    .drawer-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+    }
+
+    .drawer-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: 420px;
+      background-color: var(--bg-card);
+      border-left: 1px solid var(--border-color);
+      z-index: 201;
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .drawer.active {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .drawer-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Tabs */
+    .tabs-header {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      padding: 10px 16px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-secondary);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .tab-btn:hover { color: var(--text-primary); }
+    .tab-btn.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Notifications / Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent-blue);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      min-width: 280px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      animation: slideInRight 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    .toast-success { border-left-color: var(--success); }
+    .toast-danger { border-left-color: var(--danger); }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 20px;
+      margin-top: 12px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 4px;
+      bottom: 4px;
+      width: 2px;
+      background-color: var(--border-color);
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 3px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--accent-blue);
+    }
+
+    /* Employe Cards Grid */
+    .employe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .employe-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .employe-card:hover {
+      border-color: var(--accent-blue);
+      background-color: var(--bg-card-hover);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================
+       SIDEBAR NAVIGATION
+       ========================================== -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-logo">GDC</div>
+      <div class="sidebar-brand-text">RH <span>Congés</span></div>
+    </div>
+    <nav class="sidebar-menu">
+      <div class="nav-section-title">Gestion</div>
+      <a class="nav-item active" onclick="switchView('dashboard')">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" onclick="switchView('demandes')">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        Demandes
+      </a>
+      <a class="nav-item" onclick="switchView('employes')">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        Employés
+      </a>
+      <a class="nav-item" onclick="switchView('soldes')">
+        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+        Soldes & Exercices
+      </a>
+
+      <div class="nav-section-title">Administration</div>
+      <a class="nav-item" onclick="switchView('configuration')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Configuration
+      </a>
+    </nav>
+  </aside>
+
+  <!-- ==========================================
+       MAIN CONTENT WRAPPER
+       ========================================== -->
+  <div class="wrapper">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-title" id="page-title">Tableau de bord</div>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="openModalDemande()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Nouvelle Demande
+        </button>
+        <div class="user-profile">
+          <div class="avatar" style="background-color: var(--accent-blue);">SB</div>
+          <div>
+            <div style="font-weight: 600; font-size: 13px;">Sophie Bernard</div>
+            <div style="font-size: 11px; color: var(--text-secondary);">RH Manager</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Dynamic Body -->
+    <main class="main-content">
+
+      <!-- ================= VUE 1 : DASHBOARD ================= -->
+      <section id="view-dashboard" class="view-section active">
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background-color: var(--warning-bg); color: var(--warning);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="kpi-attente">2</span>
+              <span class="kpi-label">Demandes en attente</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background-color: var(--success-bg); color: var(--success);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-value">14</span>
+              <span class="kpi-label">Approuvés ce mois</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background-color: var(--info-bg); color: var(--accent-blue);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-value">1</span>
+              <span class="kpi-label">En congé aujourd'hui</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background-color: rgba(168, 85, 247, 0.12); color: #a855f7;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-value">16.5 j</span>
+              <span class="kpi-label">Solde moyen restant</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+          <!-- Graphique SVG Vanilla -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Congés pris par mois (2026)</span>
+            </div>
+            <div style="height: 220px; display: flex; align-items: flex-end; justify-content: space-between; padding-top: 20px; gap: 8px;">
+              <!-- Dynamic SVG Bar Representation -->
+              <div id="chart-container" style="width: 100%; height: 100%; display: flex; align-items: flex-end; gap: 12px; justify-content: space-around;"></div>
+            </div>
+          </div>
+
+          <!-- Notifications récentes -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Notifications récentes</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;" id="dashboard-notifs">
+              <!-- JS rendered -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau demandes récentes -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Demandes de congés récentes</span>
+            <button class="btn btn-outline btn-sm" onclick="switchView('demandes')">Voir tout</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Employé</th>
+                  <th>Type</th>
+                  <th>Du</th>
+                  <th>Au</th>
+                  <th>Nb jours</th>
+                  <th>Statut</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="table-dashboard-demandes">
+                <!-- Inline Content via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= VUE 2 : DEMANDES DE CONGE ================= -->
+      <section id="view-demandes" class="view-section">
+        <!-- Filtres -->
+        <div class="card" style="padding: 14px 20px;">
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 1; min-width: 180px;">
+              <input type="text" id="filter-search" class="form-control" placeholder="Rechercher un employé..." oninput="renderDemandesTable()">
+            </div>
+            <div style="width: 160px;">
+              <select class="form-select" id="filter-statut" onchange="renderDemandesTable()">
+                <option value="">Tous les statuts</option>
+                <option value="EN_ATTENTE">En attente</option>
+                <option value="APPROUVEE">Approuvée</option>
+                <option value="REJETEE">Rejetée</option>
+                <option value="ANNULEE">Annulée</option>
+              </select>
+            </div>
+            <div style="width: 180px;">
+              <select class="form-select" id="filter-type" onchange="renderDemandesTable()">
+                <option value="">Tous les types</option>
+                <option value="Congé Annuel">Congé Annuel</option>
+                <option value="Congé Maladie">Congé Maladie</option>
+                <option value="Congé Exceptionnel">Congé Exceptionnel</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table principale -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Employé</th>
+                  <th>Type de congé</th>
+                  <th>Période</th>
+                  <th>Jours</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="table-demandes">
+                <!-- Dynamic Content -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= VUE 3 : EMPLOYES ================= -->
+      <section id="view-employes" class="view-section">
+        <!-- Recherche + filtre -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px;">
+          <div style="display: flex; gap: 12px; flex: 1;">
+            <input type="text" id="search-employe" class="form-control" placeholder="Rechercher un nom, matricule..." style="max-width: 300px;" oninput="renderEmployesGrid()">
+            <select class="form-select" id="filter-dept" style="width: 180px;" onchange="renderEmployesGrid()">
+              <option value="">Tous les dépts</option>
+              <option value="IT">IT</option>
+              <option value="RH">RH</option>
+              <option value="Finance">Finance</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Grid cartes employés -->
+        <div class="employe-grid" id="employes-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </section>
+
+
+      <!-- ================= VUE 4 : SOLDES & EXERCICES ================= -->
+      <section id="view-soldes" class="view-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="font-size: 16px; font-weight: 600;">Exercice Annuel 2026</h3>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <label class="form-label" style="margin: 0;">Année :</label>
+            <select class="form-select" style="width: 100px;">
+              <option>2026</option>
+              <option>2025</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Table des soldes par employé -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Soldes de Congés par Employé</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Employé</th>
+                  <th>Type</th>
+                  <th>Initial</th>
+                  <th>Pris</th>
+                  <th>En attente</th>
+                  <th>Restant</th>
+                  <th>Progression Solde</th>
+                  <th>Expiration</th>
+                </tr>
+              </thead>
+              <tbody id="table-soldes">
+                <!-- Rendered JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section Exercice groupé par Département -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Rapport d'Exercice par Département</span>
+          </div>
+          <div id="exercice-departements">
+            <!-- Rendered JS -->
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= VUE 5 : CONFIGURATION ================= -->
+      <section id="view-configuration" class="view-section">
+        <div class="tabs-header">
+          <button class="tab-btn active" onclick="switchConfigTab('types')">Types de Congé</button>
+          <button class="tab-btn" onclick="switchConfigTab('feries')">Jours Fériés</button>
+          <button class="tab-btn" onclick="switchConfigTab('regles')">Règles de Plage</button>
+          <button class="tab-btn" onclick="switchConfigTab('entreprise')">Entreprise & Dépts</button>
+        </div>
+
+        <!-- Tab 1: Types de congé -->
+        <div id="tab-types" class="tab-content active">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Référentiel des Types de Congés</span>
+              <button class="btn btn-primary btn-sm">+ Nouveau Type</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Code / Nom</th>
+                    <th>Jours / An</th>
+                    <th>Politique Fin d'Année</th>
+                    <th>Justificatif</th>
+                    <th>Statut</th>
+                  </tr>
+                </thead>
+                <tbody id="table-config-types">
+                  <!-- Rendered JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Jours fériés -->
+        <div id="tab-feries" class="tab-content">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Jours Fériés Officiels</span>
+              <button class="btn btn-primary btn-sm">+ Ajouter Jour Férié</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Intitulé</th>
+                    <th>Récurrent</th>
+                    <th>Statut</th>
+                  </tr>
+                </thead>
+                <tbody id="table-config-feries">
+                  <!-- JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Règles de plage -->
+        <div id="tab-regles" class="tab-content">
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;" id="config-regles-list">
+            <!-- JS -->
+          </div>
+        </div>
+
+        <!-- Tab 4: Entreprise -->
+        <div id="tab-entreprise" class="tab-content">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Informations Entreprise</span>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Raison Sociale</label>
+                <input type="text" class="form-control" value="ACME Corporation SARL" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email Officiel</label>
+                <input type="text" class="form-control" value="contact@acme.com" readonly>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Départements</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Nom Département</th>
+                    <th>Responsable</th>
+                    <th>Nb Employés</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge" style="background-color: var(--border-color); color: var(--text-primary)">IT</span></td>
+                    <td>Informatique & Technologies</td>
+                    <td>Dupont Marie</td>
+                    <td>12 employés</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge" style="background-color: var(--border-color); color: var(--text-primary)">RH</span></td>
+                    <td>Ressources Humaines</td>
+                    <td>Bernard Sophie</td>
+                    <td>4 employés</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge" style="background-color: var(--border-color); color: var(--text-primary)">FIN</span></td>
+                    <td>Finance & Comptabilité</td>
+                    <td>Leroy Thomas</td>
+                    <td>6 employés</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+
+  <!-- ==========================================
+       MODALS & DRAWERS
+       ========================================== -->
+
+  <!-- Modal Nouvelle Demande -->
+  <div class="modal-backdrop" id="modal-demande">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Nouvelle Demande de Congé</span>
+        <button class="btn btn-outline btn-icon-only btn-sm" onclick="closeModalDemande()">✕</button>
+      </div>
+      <form id="form-nouvelle-demande" onsubmit="handleCreateDemande(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Employé</label>
+            <select class="form-select" id="demande-employe-id" required>
+              <!-- JS rendered -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type de Congé</label>
+            <select class="form-select" id="demande-type" required>
+              <option value="Congé Annuel">Congé Annuel (CA)</option>
+              <option value="Congé Maladie">Congé Maladie (CM)</option>
+              <option value="Congé Exceptionnel">Congé Exceptionnel (CE)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Date Début</label>
+              <input type="date" class="form-control" id="demande-debut" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date Fin</label>
+              <input type="date" class="form-control" id="demande-fin" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Motif</label>
+            <textarea class="form-control" id="demande-motif" rows="3" placeholder="Raison de la demande..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Contact durant les congés</label>
+              <input type="text" class="form-control" id="demande-contact" placeholder="+33 6 00 00 00 00">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModalDemande()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Soumettre la demande</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Modal Detail Demande -->
+  <div class="modal-backdrop" id="modal-detail-demande">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Détail de la Demande #<span id="detail-id"></span></span>
+        <button class="btn btn-outline btn-icon-only btn-sm" onclick="closeModalDetail()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="avatar" id="detail-avatar"></div>
+            <div>
+              <div style="font-weight: 600;" id="detail-employe-nom"></div>
+              <div style="font-size: 12px; color: var(--text-secondary);" id="detail-employe-poste"></div>
+            </div>
+          </div>
+          <span id="detail-badge"></span>
+        </div>
+
+        <div style="background-color: var(--bg-main); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+          <div class="form-row" style="margin-bottom: 8px;">
+            <div><span style="color: var(--text-secondary);">Type :</span> <strong id="detail-type"></strong></div>
+            <div><span style="color: var(--text-secondary);">Durée :</span> <strong id="detail-jours"></strong> jours</div>
+          </div>
+          <div style="margin-bottom: 8px;"><span style="color: var(--text-secondary);">Période :</span> du <strong id="detail-periode"></strong></div>
+          <div><span style="color: var(--text-secondary);">Motif :</span> <span id="detail-motif"></span></div>
+        </div>
+
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px;">Historique de Validation</div>
+        <div class="timeline" id="detail-timeline">
+          <!-- Timeline elements -->
+        </div>
+
+        <!-- Action Form pour Validation RH/Manager -->
+        <div id="detail-action-container" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+          <div class="form-group">
+            <label class="form-label">Commentaire de Validation / Rejet</label>
+            <input type="text" class="form-control" id="val-commentaire" placeholder="Raison ou note explicative...">
+          </div>
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-danger" onclick="actionValiderDemande(false)">Rejeter</button>
+            <button class="btn btn-success" onclick="actionValiderDemande(true)">Approuver</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Drawer Detail Employé -->
+  <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer-employe">
+    <div class="drawer-header">
+      <span style="font-weight: 600;">Fiche Employé</span>
+      <button class="btn btn-outline btn-icon-only btn-sm" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body" id="drawer-body-content">
+      <!-- Content generated dynamically -->
+    </div>
+  </div>
+
+
+  <!-- Toast Notifications Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+
+  <!-- ==========================================
+       JAVASCRIPT CODE & MOCK DATA
+       ========================================== -->
+  <script>
+    /* ------------------------------------------
+       1. DONNÉES MOCKÉES (DTO compliant)
+       ------------------------------------------ */
+    const EMPLOYES = [
+      { id: 1, matricule: "EMP001", nom: "Dupont", prenom: "Marie", email: "m.dupont@acme.com", telephone: "+33 6 12 34 56 78", poste: "Chef de projet", departement: "IT", departementId: 101, responsable: true, color: "#4f8ef7" },
+      { id: 2, matricule: "EMP002", nom: "Martin", prenom: "Paul", email: "p.martin@acme.com", telephone: "+33 6 98 76 54 32", poste: "Développeur", departement: "IT", departementId: 101, responsable: false, color: "#22c55e" },
+      { id: 3, matricule: "EMP003", nom: "Bernard", prenom: "Sophie", email: "s.bernard@acme.com", telephone: "+33 6 11 22 33 44", poste: "RH Manager", departement: "RH", departementId: 102, responsable: true, color: "#a855f7" },
+      { id: 4, matricule: "EMP004", nom: "Leroy", prenom: "Thomas", email: "t.leroy@acme.com", telephone: "+33 6 55 66 77 88", poste: "Comptable", departement: "Finance", departementId: 103, responsable: false, color: "#f59e0b" },
+      { id: 5, matricule: "EMP005", nom: "Moreau", prenom: "Emma", email: "e.moreau@acme.com", telephone: "+33 6 44 33 22 11", poste: "Stagiaire", departement: "IT", departementId: 101, responsable: false, color: "#ec4899" }
+    ];
+
+    let DEMANDES = [
+      { id: 1, employe: EMPLOYES[0], type: "Congé Annuel", debut: "2026-08-01", fin: "2026-08-15", jours: 10, statut: "EN_ATTENTE", motif: "Vacances été", contactUrgence: "+33612345678" },
+      { id: 2, employe: EMPLOYES[1], type: "Congé Maladie", debut: "2026-07-20", fin: "2026-07-22", jours: 3, statut: "APPROUVEE", motif: "Grippe saisonnière", contactUrgence: "+33698765432" },
+      { id: 3, employe: EMPLOYES[3], type: "Congé Annuel", debut: "2026-07-10", fin: "2026-07-12", jours: 2, statut: "REJETEE", motif: "Raison personnelle", contactUrgence: "+33655667788" },
+      { id: 4, employe: EMPLOYES[2], type: "Congé Exceptionnel", debut: "2026-07-25", fin: "2026-07-25", jours: 1, statut: "EN_ATTENTE", motif: "Mariage familial", contactUrgence: "+33611223344" }
+    ];
+
+    const SOLDES = [
+      { employe: EMPLOYES[0], type: "Congé Annuel", initial: 25, pris: 8, enAttente: 10, restant: 7, expiration: "2026-12-31" },
+      { employe: EMPLOYES[1], type: "Congé Annuel", initial: 25, pris: 5, enAttente: 0, restant: 20, expiration: "2026-12-31" },
+      { employe: EMPLOYES[2], type: "Congé Annuel", initial: 30, pris: 12, enAttente: 0, restant: 18, expiration: "2026-12-31" },
+      { employe: EMPLOYES[3], type: "Congé Annuel", initial: 25, pris: 2, enAttente: 2, restant: 21, expiration: "2026-12-31" },
+      { employe: EMPLOYES[4], type: "Congé Annuel", initial: 15, pris: 1, enAttente: 0, restant: 14, expiration: "2026-12-31" }
+    ];
+
+    const TYPES_CONGE = [
+      { id: 1, code: "CA", nom: "Congé Annuel", joursParDefaut: 25, politique: "REPORTER", necessiteJustificatif: false, couleur: "#4f8ef7", actif: true },
+      { id: 2, code: "CM", nom: "Congé Maladie", joursParDefaut: 10, politique: "NOUVEAU_DEPART", necessiteJustificatif: true, couleur: "#ef4444", actif: true },
+      { id: 3, code: "CE", nom: "Congé Exceptionnel", joursParDefaut: 5, politique: "NOUVEAU_DEPART", necessiteJustificatif: true, couleur: "#f59e0b", actif: true },
+      { id: 4, code: "CSS", nom: "Congé Sans Solde", joursParDefaut: 0, politique: "NOUVEAU_DEPART", necessiteJustificatif: false, couleur: "#8b9bb4", actif: true }
+    ];
+
+    const JOURS_FERIES = [
+      { id: 1, date: "2026-01-01", nom: "Jour de l'An", recurrent: true },
+      { id: 2, date: "2026-05-01", nom: "Fête du Travail", recurrent: true },
+      { id: 3, date: "2026-07-14", nom: "Fête Nationale", recurrent: true },
+      { id: 4, date: "2026-12-25", nom: "Noël", recurrent: true }
+    ];
+
+    let currentSelectedDemandeId = null;
+
+
+    /* ------------------------------------------
+       2. INITIALISATION ET NAVIGATION (SPA)
+       ------------------------------------------ */
+    document.addEventListener("DOMContentLoaded", () => {
+      renderDashboard();
+      populateEmployeSelect();
+
+      // Gestion touche Escape
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeModalDemande();
+          closeModalDetail();
+          closeDrawer();
+        }
+      });
+    });
+
+    function switchView(viewId) {
+      document.querySelectorAll(".view-section").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+
+      const targetView = document.getElementById(`view-${viewId}`);
+      if (targetView) targetView.classList.add("active");
+
+      // Update Nav Link Active
+      event.currentTarget.classList.add("active");
+
+      // Update Header Title
+      const titles = {
+        dashboard: "Tableau de bord",
+        demandes: "Gestion des Demandes",
+        employes: "Annuaire des Employés",
+        soldes: "Soldes & Exercices Annuels",
+        configuration: "Configuration Système"
+      };
+      document.getElementById("page-title").textContent = titles[viewId] || "GDC RH";
+
+      // Render view content dynamically
+      if (viewId === "dashboard") renderDashboard();
+      if (viewId === "demandes") renderDemandesTable();
+      if (viewId === "employes") renderEmployesGrid();
+      if (viewId === "soldes") renderSoldes();
+      if (viewId === "configuration") renderConfiguration();
+    }
+
+
+    /* ------------------------------------------
+       3. VUE 1 : DASHBOARD
+       ------------------------------------------ */
+    function renderDashboard() {
+      // Update KPIs
+      const pendingCount = DEMANDES.filter(d => d.statut === "EN_ATTENTE").length;
+      document.getElementById("kpi-attente").textContent = pendingCount;
+
+      // Render chart SVG
+      const months = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+      const values = [4, 2, 8, 5, 12, 18, 25, 30, 6, 4, 3, 15]; // Mock graph data
+      const maxValue = Math.max(...values);
+
+      const chartContainer = document.getElementById("chart-container");
+      chartContainer.innerHTML = months.map((m, idx) => {
+        const heightPercent = (values[idx] / maxValue) * 100;
+        return `
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end;">
+            <div style="width: 100%; max-width: 28px; background: linear-gradient(180deg, var(--accent-blue), rgba(79,142,247,0.3)); height: ${heightPercent}%; border-radius: 4px 4px 0 0;" title="${values[idx]} jours"></div>
+            <span style="font-size: 11px; color: var(--text-secondary);">${m}</span>
+          </div>
+        `;
+      }).join('');
+
+      // Render Recent Notifications
+      const notifs = [
+        { text: "Nouvelle demande de Marie Dupont", time: "Il y a 10 min", type: "info" },
+        { text: "Retour de congé de Paul Martin validé", time: "Il y a 2h", type: "success" },
+        { text: "Solde annuel faible pour Thomas Leroy", time: "Hier", type: "warning" }
+      ];
+      document.getElementById("dashboard-notifs").innerHTML = notifs.map(n => `
+        <div style="padding: 10px 12px; background-color: var(--bg-main); border-radius: var(--radius-sm); border-left: 3px solid var(--accent-blue);">
+          <div style="font-size: 12px; font-weight: 500;">${n.text}</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">${n.time}</div>
+        </div>
+      `).join('');
+
+      // Render Demandes Recentes
+      const tbody = document.getElementById("table-dashboard-demandes");
+      tbody.innerHTML = DEMANDES.slice(0, 3).map(d => `
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="avatar" style="background-color:${d.employe.color}">${getInitials(d.employe)}</div>
+              <div>
+                <div style="font-weight:600;">${d.employe.prenom} ${d.employe.nom}</div>
+                <div style="font-size:11px; color:var(--text-secondary);">${d.employe.departement}</div>
+              </div>
+            </div>
+          </td>
+          <td>${d.type}</td>
+          <td>${formatDate(d.debut)}</td>
+          <td>${formatDate(d.fin)}</td>
+          <td><strong>${d.jours} j</strong></td>
+          <td><span class="badge badge-${d.statut}">${formatStatutLabel(d.statut)}</span></td>
+          <td><button class="btn btn-outline btn-sm" onclick="openModalDetail(${d.id})">Voir</button></td>
+        </tr>
+      `).join('');
+    }
+
+
+    /* ------------------------------------------
+       4. VUE 2 : DEMANDES DE CONGE
+       ------------------------------------------ */
+    function renderDemandesTable() {
+      const search = document.getElementById("filter-search").value.toLowerCase();
+      const statut = document.getElementById("filter-statut").value;
+      const type = document.getElementById("filter-type").value;
+
+      const filtered = DEMANDES.filter(d => {
+        const matchesName = `${d.employe.nom} ${d.employe.prenom}`.toLowerCase().includes(search);
+        const matchesStatut = statut === "" || d.statut === statut;
+        const matchesType = type === "" || d.type === type;
+        return matchesName && matchesStatut && matchesType;
+      });
+
+      const tbody = document.getElementById("table-demandes");
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:30px;">Aucune demande trouvée</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(d => `
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="avatar" style="background-color:${d.employe.color}">${getInitials(d.employe)}</div>
+              <div>
+                <div style="font-weight:600;">${d.employe.prenom} ${d.employe.nom}</div>
+                <div style="font-size:11px; color:var(--text-secondary);">${d.employe.poste}</div>
+              </div>
+            </div>
+          </td>
+          <td>${d.type}</td>
+          <td>${formatDate(d.debut)} — ${formatDate(d.fin)}</td>
+          <td><strong>${d.jours} j</strong></td>
+          <td><span class="badge badge-${d.statut}">${formatStatutLabel(d.statut)}</span></td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-outline btn-sm" onclick="openModalDetail(${d.id})">Détails</button>
+              ${d.statut === 'EN_ATTENTE' ? `
+                <button class="btn btn-success btn-sm btn-icon-only" title="Approuver" onclick="quickApprove(${d.id})">✓</button>
+                <button class="btn btn-danger btn-sm btn-icon-only" title="Rejeter" onclick="quickReject(${d.id})">✕</button>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openModalDemande() {
+      document.getElementById("modal-demande").classList.add("active");
+    }
+
+    function closeModalDemande() {
+      document.getElementById("modal-demande").classList.remove("active");
+    }
+
+    function populateEmployeSelect() {
+      const select = document.getElementById("demande-employe-id");
+      select.innerHTML = EMPLOYES.map(e => `
+        <option value="${e.id}">${e.prenom} ${e.nom} (${e.departement})</option>
+      `).join('');
+    }
+
+    function handleCreateDemande(e) {
+      e.preventDefault();
+      const empId = parseInt(document.getElementById("demande-employe-id").value);
+      const type = document.getElementById("demande-type").value;
+      const debut = document.getElementById("demande-debut").value;
+      const fin = document.getElementById("demande-fin").value;
+      const motif = document.getElementById("demande-motif").value;
+
+      const emp = EMPLOYES.find(x => x.id === empId);
+
+      const newDemande = {
+        id: DEMANDES.length + 1,
+        employe: emp,
+        type: type,
+        debut: debut,
+        fin: fin,
+        jours: calculateDaysDifference(debut, fin),
+        statut: "EN_ATTENTE",
+        motif: motif || "Non spécifié",
+        contactUrgence: document.getElementById("demande-contact").value || emp.telephone
+      };
+
+      DEMANDES.unshift(newDemande);
+      closeModalDemande();
+      showToast("Succès", "Demande de congé enregistrée avec succès", "success");
+      renderDashboard();
+      renderDemandesTable();
+    }
+
+
+    /* ------------------------------------------
+       5. MODAL DETAIL & VALIDATION
+       ------------------------------------------ */
+    function openModalDetail(id) {
+      currentSelectedDemandeId = id;
+      const d = DEMANDES.find(x => x.id === id);
+      if (!d) return;
+
+      document.getElementById("detail-id").textContent = d.id;
+      document.getElementById("detail-avatar").style.backgroundColor = d.employe.color;
+      document.getElementById("detail-avatar").textContent = getInitials(d.employe);
+      document.getElementById("detail-employe-nom").textContent = `${d.employe.prenom} ${d.employe.nom}`;
+      document.getElementById("detail-employe-poste").textContent = `${d.employe.poste} · ${d.employe.departement}`;
+      document.getElementById("detail-type").textContent = d.type;
+      document.getElementById("detail-jours").textContent = d.jours;
+      document.getElementById("detail-periode").textContent = `${formatDate(d.debut)} au ${formatDate(d.fin)}`;
+      document.getElementById("detail-motif").textContent = d.motif;
+      document.getElementById("detail-badge").className = `badge badge-${d.statut}`;
+      document.getElementById("detail-badge").textContent = formatStatutLabel(d.statut);
+
+      // Timeline render
+      const timeline = document.getElementById("detail-timeline");
+      let timelineHtml = `
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div style="font-weight:600; font-size:12px;">Soumission de la demande</div>
+          <div style="font-size:11px; color:var(--text-muted);">Créé le 12 Juillet 2026 par l'employé</div>
+        </div>
+      `;
+
+      if (d.statut !== "EN_ATTENTE") {
+        timelineHtml += `
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background-color:${d.statut==='APPROUVEE'?'var(--success)':'var(--danger)'}"></div>
+            <div style="font-weight:600; font-size:12px;">Décision ${formatStatutLabel(d.statut)}</div>
+            <div style="font-size:11px; color:var(--text-muted);">Validé par Sophie Bernard (RH Manager)</div>
+          </div>
+        `;
+        document.getElementById("detail-action-container").style.display = "none";
+      } else {
+        document.getElementById("detail-action-container").style.display = "block";
+      }
+
+      timeline.innerHTML = timelineHtml;
+      document.getElementById("modal-detail-demande").classList.add("active");
+    }
+
+    function closeModalDetail() {
+      document.getElementById("modal-detail-demande").classList.remove("active");
+    }
+
+    function actionValiderDemande(approuve) {
+      if (!currentSelectedDemandeId) return;
+      const d = DEMANDES.find(x => x.id === currentSelectedDemandeId);
+      if (d) {
+        d.statut = approuve ? "APPROUVEE" : "REJETEE";
+        showToast("Demande traitée", `Demande de ${d.employe.prenom} ${approuve?'approuvée':'rejetée'}`, approuve?"success":"danger");
+        closeModalDetail();
+        renderDashboard();
+        renderDemandesTable();
+      }
+    }
+
+    function quickApprove(id) {
+      const d = DEMANDES.find(x => x.id === id);
+      if (d) {
+        d.statut = "APPROUVEE";
+        showToast("Approuvé", `Demande #${id} approuvée`, "success");
+        renderDemandesTable();
+        renderDashboard();
+      }
+    }
+
+    function quickReject(id) {
+      const d = DEMANDES.find(x => x.id === id);
+      if (d) {
+        d.statut = "REJETEE";
+        showToast("Rejeté", `Demande #${id} rejetée`, "danger");
+        renderDemandesTable();
+        renderDashboard();
+      }
+    }
+
+
+    /* ------------------------------------------
+       6. VUE 3 : EMPLOYES
+       ------------------------------------------ */
+    function renderEmployesGrid() {
+      const search = document.getElementById("search-employe").value.toLowerCase();
+      const dept = document.getElementById("filter-dept").value;
+
+      const filtered = EMPLOYES.filter(e => {
+        const matchesSearch = `${e.nom} ${e.prenom} ${e.matricule}`.toLowerCase().includes(search);
+        const matchesDept = dept === "" || e.departement === dept;
+        return matchesSearch && matchesDept;
+      });
+
+      const grid = document.getElementById("employes-grid");
+      grid.innerHTML = filtered.map(e => {
+        const solde = SOLDES.find(s => s.employe.id === e.id) || { restant: 25, initial: 25 };
+        return `
+          <div class="employe-card" onclick="openDrawerEmploye(${e.id})">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div class="avatar" style="background-color:${e.color}; width:42px; height:42px; font-size:14px;">${getInitials(e)}</div>
+              ${e.responsable ? `<span class="badge" style="background-color:rgba(168,85,247,0.15); color:#a855f7;">Responsable</span>` : ''}
+            </div>
+            <div>
+              <div style="font-weight:700; font-size:15px;">${e.prenom} ${e.nom}</div>
+              <div style="font-size:12px; color:var(--text-secondary);">${e.poste} · ${e.departement}</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Matricule: ${e.matricule}</div>
+            </div>
+            <div style="border-top:1px solid var(--border-color); padding-top:10px; margin-top:4px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                <span style="color:var(--text-secondary);">Solde de congé</span>
+                <span style="font-weight:600;">${solde.restant} / ${solde.initial} jours</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width:${(solde.restant/solde.initial)*100}%; background-color:${getProgressColor(solde.restant, solde.initial)}"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openDrawerEmploye(id) {
+      const e = EMPLOYES.find(x => x.id === id);
+      if (!e) return;
+
+      const solde = SOLDES.find(s => s.employe.id === e.id) || { restant: 25, initial: 25, pris: 0, enAttente: 0 };
+      const mesDemandes = DEMANDES.filter(d => d.employe.id === e.id);
+
+      const content = document.getElementById("drawer-body-content");
+      content.innerHTML = `
+        <div style="display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:24px;">
+          <div class="avatar" style="background-color:${e.color}; width:64px; height:64px; font-size:22px; margin-bottom:12px;">${getInitials(e)}</div>
+          <div style="font-size:18px; font-weight:700;">${e.prenom} ${e.nom}</div>
+          <div style="color:var(--text-secondary); font-size:13px;">${e.poste} — Département ${e.departement}</div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-title" style="margin-bottom:12px;">Coordonnées & Informations</div>
+          <div style="font-size:13px; display:flex; flex-direction:column; gap:8px;">
+            <div><span style="color:var(--text-secondary);">Email:</span> ${e.email}</div>
+            <div><span style="color:var(--text-secondary);">Téléphone:</span> ${e.telephone}</div>
+            <div><span style="color:var(--text-secondary);">Matricule:</span> ${e.matricule}</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-title" style="margin-bottom:12px;">Solde Actuel</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; text-align:center;">
+            <div style="background:var(--bg-main); padding:10px; border-radius:var(--radius-sm);">
+              <div style="font-size:18px; font-weight:700; color:var(--success);">${solde.restant}</div>
+              <div style="font-size:11px; color:var(--text-secondary);">Jours Restants</div>
+            </div>
+            <div style="background:var(--bg-main); padding:10px; border-radius:var(--radius-sm);">
+              <div style="font-size:18px; font-weight:700; color:var(--accent-blue);">${solde.pris}</div>
+              <div style="font-size:11px; color:var(--text-secondary);">Jours Pris</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Dernières Demandes</div>
+          ${mesDemandes.length === 0 ? `<div style="font-size:12px; color:var(--text-muted);">Aucune demande enregistrée</div>` : 
+            mesDemandes.map(d => `
+              <div style="padding:8px 0; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:600; font-size:12px;">${d.type}</div>
+                  <div style="font-size:11px; color:var(--text-secondary);">${formatDate(d.debut)} (${d.jours} j)</div>
+                </div>
+                <span class="badge badge-${d.statut}">${formatStatutLabel(d.statut)}</span>
+              </div>
+            `).join('')
+          }
+        </div>
+      `;
+
+      document.getElementById("drawer-backdrop").classList.add("active");
+      document.getElementById("drawer-employe").classList.add("active");
+    }
+
+    function closeDrawer() {
+      document.getElementById("drawer-backdrop").classList.remove("active");
+      document.getElementById("drawer-employe").classList.remove("active");
+    }
+
+
+    /* ------------------------------------------
+       7. VUE 4 : SOLDES & EXERCICES
+       ------------------------------------------ */
+    function renderSoldes() {
+      const tbody = document.getElementById("table-soldes");
+      tbody.innerHTML = SOLDES.map(s => {
+        const fillPercent = Math.round((s.restant / s.initial) * 100);
+        return `
+          <tr>
+            <td>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div class="avatar" style="background-color:${s.employe.color}">${getInitials(s.employe)}</div>
+                <span style="font-weight:600;">${s.employe.prenom} ${s.employe.nom}</span>
+              </div>
+            </td>
+            <td>${s.type}</td>
+            <td>${s.initial} j</td>
+            <td><span style="color:var(--accent-blue); font-weight:600;">${s.pris} j</span></td>
+            <td><span style="color:var(--warning); font-weight:600;">${s.enAttente} j</span></td>
+            <td><strong style="color:var(--success);">${s.restant} j</strong></td>
+            <td style="width: 180px;">
+              <div style="font-size:11px; color:var(--text-muted); text-align:right;">${fillPercent}%</div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width:${fillPercent}%; background-color:${getProgressColor(s.restant, s.initial)}"></div>
+              </div>
+            </td>
+            <td style="font-size:12px; color:var(--text-secondary);">${formatDate(s.expiration)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // Rapport groupé par Département
+      const deptReport = document.getElementById("exercice-departements");
+      const depts = ["IT", "RH", "Finance"];
+      deptReport.innerHTML = depts.map(d => `
+        <div style="padding:12px; background-color:var(--bg-main); border-radius:var(--radius-sm); margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-weight:600;">Département ${d}</span>
+            <span style="font-size:12px; color:var(--text-secondary);">Cumul Jours Pris : 15 j</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width: 65%; background-color: var(--accent-blue);"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+
+    /* ------------------------------------------
+       8. VUE 5 : CONFIGURATION
+       ------------------------------------------ */
+    function renderConfiguration() {
+      // Types de congés
+      document.getElementById("table-config-types").innerHTML = TYPES_CONGE.map(t => `
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="width:10px; height:10px; border-radius:50%; background-color:${t.couleur};"></div>
+              <strong>${t.code}</strong> — ${t.nom}
+            </div>
+          </td>
+          <td>${t.joursParDefaut} jours</td>
+          <td><span class="badge" style="background-color:var(--border-color); color:var(--text-primary);">${t.politique}</span></td>
+          <td>${t.necessiteJustificatif ? 'Oui' : 'Non'}</td>
+          <td><span class="badge badge-APPROUVEE">Actif</span></td>
+        </tr>
+      `).join('');
+
+      // Jours Fériés
+      document.getElementById("table-config-feries").innerHTML = JOURS_FERIES.map(j => `
+        <tr>
+          <td>${formatDate(j.date)}</td>
+          <td><strong>${j.nom}</strong></td>
+          <td>${j.recurrent ? 'Oui (Chaque année)' : 'Non'}</td>
+          <td><span class="badge badge-APPROUVEE">Actif</span></td>
+        </tr>
+      `).join('');
+
+      // Règles de plage
+      document.getElementById("config-regles-list").innerHTML = `
+        <div class="card">
+          <div class="card-title" style="margin-bottom:8px;">Période Haute - Vacances d'Été</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">Autorisé du 01/06 au 30/09 pour tout le personnel.</div>
+          <span class="badge badge-APPROUVEE">Appliquée</span>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:8px;">Clôture Annuelle RH</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">Expiration des reliquats fixée au 31 Décembre.</div>
+          <span class="badge badge-APPROUVEE">Appliquée</span>
+        </div>
+      `;
+    }
+
+    function switchConfigTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+      event.currentTarget.classList.add("active");
+      document.getElementById(`tab-${tabId}`).classList.add("active");
+    }
+
+
+    /* ------------------------------------------
+       9. FONCTIONS UTILITAIRES DE RENDU
+       ------------------------------------------ */
+    function getInitials(emp) {
+      return `${emp.prenom.charAt(0)}${emp.nom.charAt(0)}`.toUpperCase();
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    }
+
+    function formatStatutLabel(statut) {
+      const labels = {
+        EN_ATTENTE: "En attente",
+        APPROUVEE: "Approuvée",
+        REJETEE: "Rejetée",
+        ANNULEE: "Annulée"
+      };
+      return labels[statut] || statut;
+    }
+
+    function getProgressColor(restant, initial) {
+      const ratio = restant / initial;
+      if (ratio < 0.2) return "var(--danger)";
+      if (ratio < 0.5) return "var(--warning)";
+      return "var(--success)";
+    }
+
+    function calculateDaysDifference(d1, d2) {
+      if (!d1 || !d2) return 1;
+      const date1 = new Date(d1);
+      const date2 = new Date(d2);
+      const diffTime = Math.abs(date2 - date1);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      return diffDays || 1;
+    }
+
+    function showToast(title, message, type = "info") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <div>
+          <div style="font-weight:600; font-size:13px;">${title}</div>
+          <div style="font-size:12px; color:var(--text-secondary);">${message}</div>
+        </div>
+      `;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(100%)";
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

@@ -18,8 +18,7 @@ public interface DepartementMapper {
     @Mapping(target = "responsable", ignore = true)
     Departement toEntity(DepartementRequest request);
 
-    @Mapping(source = "responsable.id", target = "responsableId")
-    @Mapping(source = "responsable.nom", target = "responsableNom")
+    @Mapping(source = "responsable", target = "responsable", qualifiedByName = {})
     DepartementResponse toDto(Departement departement);
 
     DepartementResponseDetails toDetailsDto(Departement departement);
