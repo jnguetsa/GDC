@@ -1,0 +1,34 @@
+package com.example.demo.common.enums;
+
+public enum TypeAction {
+    // Demande
+    DEMANDE_CREATION,
+    DEMANDE_MODIFICATION,
+    DEMANDE_ANNULATION,
+    DEMANDE_APPROBATION_MANAGER,
+    DEMANDE_REJET_MANAGER,
+    DEMANDE_APPROBATION_RH,
+    DEMANDE_REJET_RH,
+
+    // Retour
+    RETOUR_ENREGISTREMENT,
+    RETOUR_MODIFICATION,
+
+    // Solde
+    SOLDE_INITIALISATION,
+    SOLDE_AJUSTEMENT,
+    SOLDE_RECALCUL,
+
+    // Exercice
+    EXERCICE_CREATION,
+    EXERCICE_CLOTURE,
+
+    // Type de congé
+    TYPE_CONGE_CREATION,
+    TYPE_CONGE_MODIFICATION,
+    TYPE_CONGE_DESACTIVATION,
+
+    // Authentification
+    CONNEXION,
+    DECONNEXION
+}
